@@ -1,6 +1,4 @@
-"use client"
-
-import { toaster } from "@/components/ui/toaster"
+import { toaster } from "../components/toaster"
 
 const useCustomToast = () => {
   const showSuccessToast = (description: string) => {
