@@ -53,7 +53,7 @@ export const Body_login_login_access_tokenSchema = {
   type: "object",
   required: ["username", "password"],
   title: "Body_login-login_access_token",
-} as const
+} as const;
 
 export const HTTPValidationErrorSchema = {
   properties: {
@@ -67,7 +67,7 @@ export const HTTPValidationErrorSchema = {
   },
   type: "object",
   title: "HTTPValidationError",
-} as const
+} as const;
 
 export const ItemCreateSchema = {
   properties: {
@@ -93,7 +93,7 @@ export const ItemCreateSchema = {
   type: "object",
   required: ["title"],
   title: "ItemCreate",
-} as const
+} as const;
 
 export const ItemPublicSchema = {
   properties: {
@@ -129,7 +129,7 @@ export const ItemPublicSchema = {
   type: "object",
   required: ["title", "id", "owner_id"],
   title: "ItemPublic",
-} as const
+} as const;
 
 export const ItemUpdateSchema = {
   properties: {
@@ -161,7 +161,7 @@ export const ItemUpdateSchema = {
   },
   type: "object",
   title: "ItemUpdate",
-} as const
+} as const;
 
 export const ItemsPublicSchema = {
   properties: {
@@ -180,7 +180,7 @@ export const ItemsPublicSchema = {
   type: "object",
   required: ["data", "count"],
   title: "ItemsPublic",
-} as const
+} as const;
 
 export const MessageSchema = {
   properties: {
@@ -192,7 +192,7 @@ export const MessageSchema = {
   type: "object",
   required: ["message"],
   title: "Message",
-} as const
+} as const;
 
 export const NewPasswordSchema = {
   properties: {
@@ -210,7 +210,7 @@ export const NewPasswordSchema = {
   type: "object",
   required: ["token", "new_password"],
   title: "NewPassword",
-} as const
+} as const;
 
 export const TokenSchema = {
   properties: {
@@ -227,7 +227,7 @@ export const TokenSchema = {
   type: "object",
   required: ["access_token"],
   title: "Token",
-} as const
+} as const;
 
 export const UpdatePasswordSchema = {
   properties: {
@@ -247,7 +247,7 @@ export const UpdatePasswordSchema = {
   type: "object",
   required: ["current_password", "new_password"],
   title: "UpdatePassword",
-} as const
+} as const;
 
 export const UserCreateSchema = {
   properties: {
@@ -289,7 +289,7 @@ export const UserCreateSchema = {
   type: "object",
   required: ["email", "password"],
   title: "UserCreate",
-} as const
+} as const;
 
 export const UserPublicSchema = {
   properties: {
@@ -330,7 +330,7 @@ export const UserPublicSchema = {
   type: "object",
   required: ["email", "id"],
   title: "UserPublic",
-} as const
+} as const;
 
 export const UserRegisterSchema = {
   properties: {
@@ -362,7 +362,7 @@ export const UserRegisterSchema = {
   type: "object",
   required: ["email", "password"],
   title: "UserRegister",
-} as const
+} as const;
 
 export const UserUpdateSchema = {
   properties: {
@@ -417,7 +417,7 @@ export const UserUpdateSchema = {
   },
   type: "object",
   title: "UserUpdate",
-} as const
+} as const;
 
 export const UserUpdateMeSchema = {
   properties: {
@@ -449,7 +449,7 @@ export const UserUpdateMeSchema = {
   },
   type: "object",
   title: "UserUpdateMe",
-} as const
+} as const;
 
 export const UsersPublicSchema = {
   properties: {
@@ -468,7 +468,7 @@ export const UsersPublicSchema = {
   type: "object",
   required: ["data", "count"],
   title: "UsersPublic",
-} as const
+} as const;
 
 export const ValidationErrorSchema = {
   properties: {
@@ -498,4 +498,514 @@ export const ValidationErrorSchema = {
   type: "object",
   required: ["loc", "msg", "type"],
   title: "ValidationError",
-} as const
+} as const;
+
+// ============================================
+// INVENTORY SCHEMAS
+// ============================================
+
+export const ProductCreateSchema = {
+  properties: {
+    name: {
+      type: "string",
+      maxLength: 255,
+      minLength: 1,
+      title: "Name",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+    },
+    price: {
+      type: "number",
+      minimum: 0,
+      title: "Price",
+    },
+    stock: {
+      type: "integer",
+      minimum: 0,
+      title: "Stock",
+    },
+    category_id: {
+      anyOf: [
+        {
+          type: "string",
+          format: "uuid",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category Id",
+    },
+  },
+  type: "object",
+  required: ["name", "price", "stock"],
+  title: "ProductCreate",
+} as const;
+
+export const ProductPublicSchema = {
+  properties: {
+    name: {
+      type: "string",
+      maxLength: 255,
+      minLength: 1,
+      title: "Name",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+    },
+    price: {
+      type: "number",
+      minimum: 0,
+      title: "Price",
+    },
+    stock: {
+      type: "integer",
+      minimum: 0,
+      title: "Stock",
+    },
+    category_id: {
+      anyOf: [
+        {
+          type: "string",
+          format: "uuid",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category Id",
+    },
+    id: {
+      type: "string",
+      format: "uuid",
+      title: "Id",
+    },
+  },
+  type: "object",
+  required: ["name", "price", "stock", "id"],
+  title: "ProductPublic",
+} as const;
+
+export const ProductUpdateSchema = {
+  properties: {
+    name: {
+      anyOf: [
+        {
+          type: "string",
+          maxLength: 255,
+          minLength: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+    },
+    price: {
+      anyOf: [
+        {
+          type: "number",
+          minimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Price",
+    },
+    stock: {
+      anyOf: [
+        {
+          type: "integer",
+          minimum: 0,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Stock",
+    },
+    category_id: {
+      anyOf: [
+        {
+          type: "string",
+          format: "uuid",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Category Id",
+    },
+  },
+  type: "object",
+  title: "ProductUpdate",
+} as const;
+
+export const ProductsPublicSchema = {
+  properties: {
+    data: {
+      items: {
+        $ref: "#/components/schemas/ProductPublic",
+      },
+      type: "array",
+      title: "Data",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+    },
+  },
+  type: "object",
+  required: ["data", "count"],
+  title: "ProductsPublic",
+} as const;
+
+export const CategoryCreateSchema = {
+  properties: {
+    name: {
+      type: "string",
+      maxLength: 255,
+      minLength: 1,
+      title: "Name",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+    },
+  },
+  type: "object",
+  required: ["name"],
+  title: "CategoryCreate",
+} as const;
+
+export const CategoryPublicSchema = {
+  properties: {
+    name: {
+      type: "string",
+      maxLength: 255,
+      minLength: 1,
+      title: "Name",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+    },
+    id: {
+      type: "string",
+      format: "uuid",
+      title: "Id",
+    },
+  },
+  type: "object",
+  required: ["name", "id"],
+  title: "CategoryPublic",
+} as const;
+
+export const CategoryUpdateSchema = {
+  properties: {
+    name: {
+      anyOf: [
+        {
+          type: "string",
+          maxLength: 255,
+          minLength: 1,
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Name",
+    },
+    description: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Description",
+    },
+  },
+  type: "object",
+  title: "CategoryUpdate",
+} as const;
+
+export const CategoriesPublicSchema = {
+  properties: {
+    data: {
+      items: {
+        $ref: "#/components/schemas/CategoryPublic",
+      },
+      type: "array",
+      title: "Data",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+    },
+  },
+  type: "object",
+  required: ["data", "count"],
+  title: "CategoriesPublic",
+} as const;
+
+export const MovementCreateSchema = {
+  properties: {
+    product_id: {
+      type: "string",
+      format: "uuid",
+      title: "Product Id",
+    },
+    quantity: {
+      type: "integer",
+      title: "Quantity",
+    },
+    movement_type: {
+      type: "string",
+      enum: ["entrada", "salida"],
+      title: "Movement Type",
+    },
+    notes: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Notes",
+    },
+  },
+  type: "object",
+  required: ["product_id", "quantity", "movement_type"],
+  title: "MovementCreate",
+} as const;
+
+export const MovementPublicSchema = {
+  properties: {
+    product_id: {
+      type: "string",
+      format: "uuid",
+      title: "Product Id",
+    },
+    quantity: {
+      type: "integer",
+      title: "Quantity",
+    },
+    movement_type: {
+      type: "string",
+      enum: ["entrada", "salida"],
+      title: "Movement Type",
+    },
+    notes: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Notes",
+    },
+    id: {
+      type: "string",
+      format: "uuid",
+      title: "Id",
+    },
+    created_at: {
+      type: "string",
+      format: "date-time",
+      title: "Created At",
+    },
+  },
+  type: "object",
+  required: ["product_id", "quantity", "movement_type", "id", "created_at"],
+  title: "MovementPublic",
+} as const;
+
+export const MovementUpdateSchema = {
+  properties: {
+    quantity: {
+      anyOf: [
+        {
+          type: "integer",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Quantity",
+    },
+    movement_type: {
+      anyOf: [
+        {
+          type: "string",
+          enum: ["entrada", "salida"],
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Movement Type",
+    },
+    notes: {
+      anyOf: [
+        {
+          type: "string",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Notes",
+    },
+  },
+  type: "object",
+  title: "MovementUpdate",
+} as const;
+
+export const MovementsPublicSchema = {
+  properties: {
+    data: {
+      items: {
+        $ref: "#/components/schemas/MovementPublic",
+      },
+      type: "array",
+      title: "Data",
+    },
+    count: {
+      type: "integer",
+      title: "Count",
+    },
+  },
+  type: "object",
+  required: ["data", "count"],
+  title: "MovementsPublic",
+} as const;
+
+export const SalesReportSchema = {
+  properties: {
+    start_date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Start Date",
+    },
+    end_date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "End Date",
+    },
+    total_sales: {
+      type: "number",
+      title: "Total Sales",
+    },
+    total_quantity: {
+      type: "integer",
+      title: "Total Quantity",
+    },
+  },
+  type: "object",
+  required: ["total_sales", "total_quantity"],
+  title: "SalesReport",
+} as const;
+
+export const PurchasesReportSchema = {
+  properties: {
+    start_date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "Start Date",
+    },
+    end_date: {
+      anyOf: [
+        {
+          type: "string",
+          format: "date",
+        },
+        {
+          type: "null",
+        },
+      ],
+      title: "End Date",
+    },
+    total_purchases: {
+      type: "number",
+      title: "Total Purchases",
+    },
+    total_quantity: {
+      type: "integer",
+      title: "Total Quantity",
+    },
+  },
+  type: "object",
+  required: ["total_purchases", "total_quantity"],
+  title: "PurchasesReport",
+} as const;

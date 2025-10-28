@@ -11,32 +11,17 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as SignupImport } from './routes/signup'
-import { Route as ResetPasswordImport } from './routes/reset-password'
-import { Route as RecoverPasswordImport } from './routes/recover-password'
 import { Route as LoginImport } from './routes/login'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutUsersImport } from './routes/_layout/users'
 import { Route as LayoutSettingsImport } from './routes/_layout/settings'
-import { Route as LayoutItemsImport } from './routes/_layout/items'
-import { Route as LayoutAdminImport } from './routes/_layout/admin'
+import { Route as LayoutReportsImport } from './routes/_layout/reports'
+import { Route as LayoutProductsImport } from './routes/_layout/products'
+import { Route as LayoutMovementsImport } from './routes/_layout/movements'
+import { Route as LayoutCategoriesImport } from './routes/_layout/categories'
 
 // Create/Update Routes
-
-const SignupRoute = SignupImport.update({
-  path: '/signup',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const ResetPasswordRoute = ResetPasswordImport.update({
-  path: '/reset-password',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const RecoverPasswordRoute = RecoverPasswordImport.update({
-  path: '/recover-password',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const LoginRoute = LoginImport.update({
   path: '/login',
@@ -53,18 +38,33 @@ const LayoutIndexRoute = LayoutIndexImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutUsersRoute = LayoutUsersImport.update({
+  path: '/users',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutSettingsRoute = LayoutSettingsImport.update({
   path: '/settings',
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const LayoutItemsRoute = LayoutItemsImport.update({
-  path: '/items',
+const LayoutReportsRoute = LayoutReportsImport.update({
+  path: '/reports',
   getParentRoute: () => LayoutRoute,
 } as any)
 
-const LayoutAdminRoute = LayoutAdminImport.update({
-  path: '/admin',
+const LayoutProductsRoute = LayoutProductsImport.update({
+  path: '/products',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutMovementsRoute = LayoutMovementsImport.update({
+  path: '/movements',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutCategoriesRoute = LayoutCategoriesImport.update({
+  path: '/categories',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -80,28 +80,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
-    '/recover-password': {
-      preLoaderRoute: typeof RecoverPasswordImport
-      parentRoute: typeof rootRoute
-    }
-    '/reset-password': {
-      preLoaderRoute: typeof ResetPasswordImport
-      parentRoute: typeof rootRoute
-    }
-    '/signup': {
-      preLoaderRoute: typeof SignupImport
-      parentRoute: typeof rootRoute
-    }
-    '/_layout/admin': {
-      preLoaderRoute: typeof LayoutAdminImport
+    '/_layout/categories': {
+      preLoaderRoute: typeof LayoutCategoriesImport
       parentRoute: typeof LayoutImport
     }
-    '/_layout/items': {
-      preLoaderRoute: typeof LayoutItemsImport
+    '/_layout/movements': {
+      preLoaderRoute: typeof LayoutMovementsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/products': {
+      preLoaderRoute: typeof LayoutProductsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/reports': {
+      preLoaderRoute: typeof LayoutReportsImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/settings': {
       preLoaderRoute: typeof LayoutSettingsImport
+      parentRoute: typeof LayoutImport
+    }
+    '/_layout/users': {
+      preLoaderRoute: typeof LayoutUsersImport
       parentRoute: typeof LayoutImport
     }
     '/_layout/': {
@@ -115,15 +115,15 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
-    LayoutAdminRoute,
-    LayoutItemsRoute,
+    LayoutCategoriesRoute,
+    LayoutMovementsRoute,
+    LayoutProductsRoute,
+    LayoutReportsRoute,
     LayoutSettingsRoute,
+    LayoutUsersRoute,
     LayoutIndexRoute,
   ]),
   LoginRoute,
-  RecoverPasswordRoute,
-  ResetPasswordRoute,
-  SignupRoute,
 ])
 
 /* prettier-ignore-end */
