@@ -1,4 +1,6 @@
-import { CancelablePromise, OpenAPI, request as __request } from './core/OpenAPI';
+import type { CancelablePromise } from './core/CancelablePromise';
+import { OpenAPI } from './core/OpenAPI';
+import { request as __request } from './core/request';
 
 // Enums
 export enum MovementType {
