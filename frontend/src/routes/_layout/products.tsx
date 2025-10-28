@@ -162,20 +162,20 @@ function Products() {
 
   const columns = [
     {
+      title: "SKU",
+      dataIndex: "sku",
+      key: "sku",
+      width: 120,
+      sorter: (a: ProductPublic, b: ProductPublic) =>
+        a.sku.localeCompare(b.sku),
+    },
+    {
       title: "Nombre",
       dataIndex: "name",
       key: "name",
       ellipsis: true,
       sorter: (a: ProductPublic, b: ProductPublic) =>
         a.name.localeCompare(b.name),
-    },
-    {
-      title: "Descripción",
-      dataIndex: "description",
-      key: "description",
-      ellipsis: true,
-      render: (desc: string | null) =>
-        desc || <span style={{ color: "#999" }}>Sin descripción</span>,
     },
     {
       title: "Categoría",
@@ -189,22 +189,22 @@ function Products() {
         ),
     },
     {
-      title: "Precio",
-      dataIndex: "price",
-      key: "price",
-      render: (price: number) => `$${price.toFixed(2)}`,
-      sorter: (a: ProductPublic, b: ProductPublic) => a.price - b.price,
+      title: "Precio Venta",
+      dataIndex: "sale_price",
+      key: "sale_price",
+      render: (price: number) => `$${Number(price).toFixed(2)}`,
+      sorter: (a: ProductPublic, b: ProductPublic) => Number(a.sale_price) - Number(b.sale_price),
     },
     {
       title: "Stock",
-      dataIndex: "stock",
-      key: "stock",
-      render: (stock: number) => (
-        <Tag color={stock > 10 ? "green" : stock > 0 ? "orange" : "red"}>
-          {stock} unidades
+      dataIndex: "current_stock",
+      key: "current_stock",
+      render: (stock: number, record: ProductPublic) => (
+        <Tag color={stock > record.min_stock ? "green" : stock > 0 ? "orange" : "red"}>
+          {stock} {record.unit_of_measure}
         </Tag>
       ),
-      sorter: (a: ProductPublic, b: ProductPublic) => a.stock - b.stock,
+      sorter: (a: ProductPublic, b: ProductPublic) => a.current_stock - b.current_stock,
     },
     {
       title: "Acciones",
@@ -239,10 +239,10 @@ function Products() {
   const totalProducts = productsData?.count || 0;
   const totalValue =
     productsData?.data.reduce(
-      (sum, product) => sum + product.stock * product.price,
+      (sum, product) => sum + product.current_stock * Number(product.sale_price),
       0
     ) || 0;
-  const lowStock = productsData?.data.filter((p) => p.stock <= 10).length || 0;
+  const lowStock = productsData?.data.filter((p) => p.current_stock <= p.min_stock).length || 0;
 
   return (
     <>
@@ -342,18 +342,38 @@ function Products() {
           onFinish={handleSubmit}
           autoComplete="off"
         >
-          <Form.Item
-            name="name"
-            label="Nombre"
-            rules={[
-              { required: true, message: "El nombre es requerido" },
-              { max: 255, message: "Máximo 255 caracteres" },
-            ]}
-          >
-            <Input placeholder="Nombre del producto" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="sku"
+                label="SKU / Código"
+                rules={[
+                  { required: true, message: "El SKU es requerido" },
+                  { max: 50, message: "Máximo 50 caracteres" },
+                ]}
+              >
+                <Input placeholder="Código único del producto" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="name"
+                label="Nombre"
+                rules={[
+                  { required: true, message: "El nombre es requerido" },
+                  { max: 255, message: "Máximo 255 caracteres" },
+                ]}
+              >
+                <Input placeholder="Nombre del producto" />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item name="description" label="Descripción">
+          <Form.Item
+            name="description"
+            label="Descripción"
+            rules={[{ max: 500, message: "Máximo 500 caracteres" }]}
+          >
             <Input.TextArea rows={3} placeholder="Descripción del producto" />
           </Form.Item>
 
@@ -372,13 +392,37 @@ function Products() {
             </Col>
             <Col span={12}>
               <Form.Item
-                name="price"
-                label="Precio"
+                name="unit_of_measure"
+                label="Unidad de Medida"
                 rules={[
-                  { required: true, message: "El precio es requerido" },
+                  { required: true, message: "La unidad es requerida" },
+                  { max: 50, message: "Máximo 50 caracteres" },
+                ]}
+              >
+                <Select placeholder="Selecciona unidad">
+                  <Select.Option value="unidad">Unidad</Select.Option>
+                  <Select.Option value="kg">Kilogramo (kg)</Select.Option>
+                  <Select.Option value="g">Gramo (g)</Select.Option>
+                  <Select.Option value="litro">Litro</Select.Option>
+                  <Select.Option value="ml">Mililitro (ml)</Select.Option>
+                  <Select.Option value="caja">Caja</Select.Option>
+                  <Select.Option value="paquete">Paquete</Select.Option>
+                  <Select.Option value="metro">Metro</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="unit_price"
+                label="Precio de Compra"
+                rules={[
+                  { required: true, message: "El precio de compra es requerido" },
                   {
                     type: "number",
-                    min: 0,
+                    min: 0.01,
                     message: "El precio debe ser mayor a 0",
                   },
                 ]}
@@ -386,7 +430,29 @@ function Products() {
                 <InputNumber
                   prefix="$"
                   style={{ width: "100%" }}
-                  min={0}
+                  min={0.01}
+                  precision={2}
+                  placeholder="0.00"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="sale_price"
+                label="Precio de Venta"
+                rules={[
+                  { required: true, message: "El precio de venta es requerido" },
+                  {
+                    type: "number",
+                    min: 0.01,
+                    message: "El precio debe ser mayor a 0",
+                  },
+                ]}
+              >
+                <InputNumber
+                  prefix="$"
+                  style={{ width: "100%" }}
+                  min={0.01}
                   precision={2}
                   placeholder="0.00"
                 />
@@ -395,16 +461,17 @@ function Products() {
           </Row>
 
           <Form.Item
-            name="stock"
-            label="Stock Inicial"
+            name="min_stock"
+            label="Stock Mínimo (para alertas)"
             rules={[
-              { required: true, message: "El stock es requerido" },
+              { required: true, message: "El stock mínimo es requerido" },
               {
                 type: "number",
                 min: 0,
                 message: "El stock debe ser mayor o igual a 0",
               },
             ]}
+            initialValue={0}
           >
             <InputNumber style={{ width: "100%" }} min={0} placeholder="0" />
           </Form.Item>

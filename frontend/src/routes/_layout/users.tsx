@@ -8,6 +8,7 @@ import {
   Tag,
   Modal,
   Form,
+  Select,
   Popconfirm,
   Tooltip,
   Row,
@@ -175,6 +176,29 @@ function Users() {
       dataIndex: "email",
       key: "email",
       ellipsis: true,
+    },
+    {
+      title: "Rol",
+      dataIndex: "role",
+      key: "role",
+      render: (role: string) => {
+        const roleConfig = {
+          ADMINISTRADOR: { color: "purple", label: "Administrador" },
+          VENDEDOR: { color: "blue", label: "Vendedor" },
+          AUXILIAR: { color: "green", label: "Auxiliar" },
+        };
+        const config = roleConfig[role as keyof typeof roleConfig] || {
+          color: "default",
+          label: role,
+        };
+        return <Tag color={config.color}>{config.label}</Tag>;
+      },
+      filters: [
+        { text: "Administrador", value: "ADMINISTRADOR" },
+        { text: "Vendedor", value: "VENDEDOR" },
+        { text: "Auxiliar", value: "AUXILIAR" },
+      ],
+      onFilter: (value: any, record: UserPublic) => record.role === value,
     },
     {
       title: "Estado",
@@ -374,6 +398,19 @@ function Users() {
                   : "Mínimo 8 caracteres"
               }
             />
+          </Form.Item>
+
+          <Form.Item
+            name="role"
+            label="Rol"
+            rules={[{ required: true, message: "Selecciona un rol" }]}
+            initialValue="VENDEDOR"
+          >
+            <Select placeholder="Selecciona un rol">
+              <Select.Option value="ADMINISTRADOR">Administrador</Select.Option>
+              <Select.Option value="VENDEDOR">Vendedor</Select.Option>
+              <Select.Option value="AUXILIAR">Auxiliar</Select.Option>
+            </Select>
           </Form.Item>
 
           <Row gutter={16}>
