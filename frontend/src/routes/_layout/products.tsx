@@ -78,7 +78,7 @@ function Products() {
   // Mutación para crear producto
   const createMutation = useMutation({
     mutationFn: (data: ProductCreate) =>
-      ProductsService.createProduct({ requestBody: data }),
+      ProductsService.createProduct({ requestBody: data as any }),
     onSuccess: () => {
       showSuccess("Producto creado exitosamente");
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -92,7 +92,7 @@ function Products() {
   // Mutación para actualizar producto - CORREGIDO: usa 'id' no 'productId'
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: ProductUpdate }) =>
-      ProductsService.updateProduct({ id, requestBody: data }),
+      ProductsService.updateProduct({ id, requestBody: data as any }),
     onSuccess: () => {
       showSuccess("Producto actualizado exitosamente");
       queryClient.invalidateQueries({ queryKey: ["products"] });
@@ -149,11 +149,11 @@ function Products() {
   };
 
   // Filtrar productos localmente
-  const filteredData = productsData?.data.filter(
+  const filteredData = (productsData?.data.filter(
     (product) =>
       product.name.toLowerCase().includes(searchText.toLowerCase()) ||
       product.description?.toLowerCase().includes(searchText.toLowerCase())
-  );
+  ) || []) as ProductPublic[];
 
   // Crear un mapa de categorías para lookup rápido
   const categoriesMap = new Map(
@@ -238,11 +238,11 @@ function Products() {
   // Calcular estadísticas
   const totalProducts = productsData?.count || 0;
   const totalValue =
-    productsData?.data.reduce(
+    (productsData?.data as ProductPublic[] || []).reduce(
       (sum, product) => sum + product.current_stock * Number(product.sale_price),
       0
     ) || 0;
-  const lowStock = productsData?.data.filter((p) => p.current_stock <= p.min_stock).length || 0;
+  const lowStock = (productsData?.data as ProductPublic[] || []).filter((p) => p.current_stock <= p.min_stock).length || 0;
 
   return (
     <>

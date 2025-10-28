@@ -61,7 +61,7 @@ export interface UserUpdate {
   email?: string | null;
   password?: string | null;
   full_name?: string | null;
-  role?: 'ADMINISTRADOR' | 'VENDEDOR' | 'AUXILIAR' | null;
-  is_active?: boolean | null;
-  is_superuser?: boolean | null;
+  role?: 'ADMINISTRADOR' | 'VENDEDOR' | 'AUXILIAR';
+  is_active?: boolean;
+  is_superuser?: boolean;
 }

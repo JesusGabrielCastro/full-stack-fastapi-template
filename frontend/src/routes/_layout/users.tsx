@@ -76,7 +76,7 @@ function Users() {
   // Mutación para crear usuario
   const createMutation = useMutation({
     mutationFn: (data: UserCreate) =>
-      UsersService.createUser({ requestBody: data }),
+      UsersService.createUser({ requestBody: data as any }),
     onSuccess: () => {
       showSuccess("Usuario creado exitosamente");
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -90,7 +90,7 @@ function Users() {
   // Mutación para actualizar usuario - CORREGIDO: usa 'userId' como string
   const updateMutation = useMutation({
     mutationFn: ({ userId, data }: { userId: string; data: UserUpdate }) =>
-      UsersService.updateUser({ userId, requestBody: data }),
+      UsersService.updateUser({ userId, requestBody: data as any }),
     onSuccess: () => {
       showSuccess("Usuario actualizado exitosamente");
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -151,11 +151,11 @@ function Users() {
   };
 
   // Filtrar usuarios localmente
-  const filteredData = usersData?.data.filter(
+  const filteredData = (usersData?.data.filter(
     (user) =>
       user.email.toLowerCase().includes(searchText.toLowerCase()) ||
       user.full_name?.toLowerCase().includes(searchText.toLowerCase())
-  );
+  ) || []) as UserPublic[];
 
   const columns = [
     {
