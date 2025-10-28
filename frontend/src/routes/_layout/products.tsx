@@ -28,7 +28,7 @@ import {
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import type { ProductPublic, ProductCreate, ProductUpdate } from "../../client";
+import type { ProductPublic, ProductCreate, ProductUpdate } from "../../client/extended-types";
 import { ProductsService, CategoriesService } from "../../client";
 import { useNotification } from "../../hooks/useNotification";
 

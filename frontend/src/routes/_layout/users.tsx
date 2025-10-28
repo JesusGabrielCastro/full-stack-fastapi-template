@@ -29,7 +29,7 @@ import {
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import type { UserPublic, UserCreate, UserUpdate } from "../../client";
+import type { UserPublic, UserCreate, UserUpdate } from "../../client/extended-types";
 import { UsersService } from "../../client";
 import { useNotification } from "../../hooks/useNotification";
 
