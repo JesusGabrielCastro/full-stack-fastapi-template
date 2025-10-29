@@ -1,3 +1,5 @@
+import { ReactNode } from "react"
+
 export class CancelError extends Error {
   constructor(message: string) {
     super(message)
@@ -25,6 +27,11 @@ export class CancelablePromise<T> implements Promise<T> {
   readonly promise: Promise<T>
   private _resolve?: (value: T | PromiseLike<T>) => void
   private _reject?: (reason?: unknown) => void
+  email: ReactNode
+  full_name!: string
+  role!: string
+  is_active!: boolean
+  is_superuser!: boolean
 
   constructor(
     executor: (

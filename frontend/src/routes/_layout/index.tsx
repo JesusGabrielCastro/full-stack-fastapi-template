@@ -1,4 +1,14 @@
-import { Row, Col, Card, Statistic, Typography, Space, Table, Tag } from "antd";
+import {
+  Row,
+  Col,
+  Card,
+  Statistic,
+  Typography,
+  Space,
+  Table,
+  Tag,
+  theme,
+} from "antd";
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -35,6 +45,7 @@ export const Route = createFileRoute("/_layout/")({
 const COLORS = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
 
 function Dashboard() {
+  const { token } = theme.useToken();
   const { user: currentUser } = useAuth();
 
   // Queries para obtener datos
@@ -65,39 +76,53 @@ function Dashboard() {
     { name: "Hogar", value: 278 },
   ];
 
+  // Configuración de tipos de movimiento
+  const movementTypeConfig: Record<string, { color: string; label: string }> = {
+    ENTRADA_COMPRA: { color: "green", label: "Entrada Compra" },
+    SALIDA_VENTA: { color: "red", label: "Salida Venta" },
+    AJUSTE_CONTEO: { color: "blue", label: "Ajuste Conteo" },
+    AJUSTE_MERMA: { color: "orange", label: "Ajuste Merma" },
+    DEVOLUCION_CLIENTE: { color: "cyan", label: "Devolución Cliente" },
+    DEVOLUCION_PROVEEDOR: { color: "purple", label: "Devolución Proveedor" },
+  };
+
   // Columnas para la tabla de movimientos recientes
   const movementColumns = [
     {
-      title: "Producto",
-      dataIndex: ["product", "name"],
-      key: "product",
+      title: "Referencia",
+      dataIndex: "reference_number",
+      key: "reference",
+      render: (reference: string | null) => {
+        if (!reference) return <Text type="secondary">Sin referencia</Text>;
+        return <span style={{ fontWeight: 500 }}>{reference}</span>;
+      },
     },
     {
       title: "Tipo",
       dataIndex: "movement_type",
       key: "type",
       render: (type: string) => {
-        const color =
-          type === "VENTA"
-            ? "red"
-            : type === "COMPRA"
-              ? "green"
-              : type === "AJUSTE"
-                ? "orange"
-                : "blue";
-        return <Tag color={color}>{type}</Tag>;
+        const config = movementTypeConfig[type] || {
+          color: "default",
+          label: type,
+        };
+        return <Tag color={config.color}>{config.label}</Tag>;
       },
     },
     {
-      title: "Cantidad",
-      dataIndex: "quantity",
-      key: "quantity",
-    },
-    {
       title: "Fecha",
-      dataIndex: "created_at",
+      dataIndex: "movement_date",
       key: "date",
-      render: (date: string) => new Date(date).toLocaleDateString("es-ES"),
+      render: (date: string) => {
+        if (!date) return "-";
+        return new Date(date).toLocaleDateString("es-ES", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      },
     },
   ];
 
@@ -197,10 +222,19 @@ function Dashboard() {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="name" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={token.colorBorderSecondary}
+                />
+                <XAxis dataKey="name" stroke={token.colorTextSecondary} />
+                <YAxis stroke={token.colorTextSecondary} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: token.colorBgElevated,
+                    borderColor: token.colorBorder,
+                    borderRadius: token.borderRadius,
+                  }}
+                />
                 <Legend />
                 <Area
                   type="monotone"
@@ -249,7 +283,13 @@ function Dashboard() {
                     />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: token.colorBgElevated,
+                    borderColor: token.colorBorder,
+                    borderRadius: token.borderRadius,
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </Card>
@@ -268,6 +308,9 @@ function Dashboard() {
           rowKey="id"
           pagination={false}
           loading={!movementsData}
+          locale={{
+            emptyText: "No hay movimientos recientes",
+          }}
         />
       </Card>
     </Space>

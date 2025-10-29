@@ -15,6 +15,8 @@ import {
   Statistic,
   Badge,
   Switch,
+  Descriptions,
+  Select,
 } from "antd";
 import {
   PlusOutlined,
@@ -24,11 +26,19 @@ import {
   UserOutlined,
   TeamOutlined,
   CrownOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import type { UserPublic, UserCreate, UserUpdate } from "../../client";
+import type {
+  UserPublic,
+  UserCreate,
+  UserUpdate,
+  UserUpdateMe,
+  UpdatePassword,
+  UserRole,
+} from "../../client";
 import { UsersService } from "../../client";
 import { useNotification } from "../../hooks/useNotification";
 
@@ -40,7 +50,7 @@ const usersSearchSchema = z.object({
 
 const PER_PAGE = 10;
 
-export const Route = createFileRoute("/_layout/users" as any)({
+export const Route = createFileRoute("/_layout/users")({
   component: Users,
   validateSearch: (search) => usersSearchSchema.parse(search),
 });
@@ -52,9 +62,15 @@ function Users() {
   const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserPublic | null>(null);
+  const [viewingUser, setViewingUser] = useState<UserPublic | null>(null);
   const [searchText, setSearchText] = useState("");
   const [form] = Form.useForm();
+  const [passwordForm] = Form.useForm();
+  const [profileForm] = Form.useForm();
 
   // Query para el usuario actual
   const { data: currentUser } = useQuery({
@@ -72,6 +88,16 @@ function Users() {
       }),
   });
 
+  // Query para ver detalles de un usuario específico
+  const { data: userDetails, isLoading: loadingDetails } = useQuery({
+    queryKey: ["user", viewingUser?.id],
+    queryFn: () =>
+      viewingUser
+        ? UsersService.readUserById({ userId: viewingUser.id })
+        : Promise.resolve(null),
+    enabled: !!viewingUser,
+  });
+
   // Mutación para crear usuario
   const createMutation = useMutation({
     mutationFn: (data: UserCreate) =>
@@ -86,7 +112,7 @@ function Users() {
     },
   });
 
-  // Mutación para actualizar usuario - CORREGIDO: usa 'userId' como string
+  // Mutación para actualizar usuario (admin editando otro usuario)
   const updateMutation = useMutation({
     mutationFn: ({ userId, data }: { userId: string; data: UserUpdate }) =>
       UsersService.updateUser({ userId, requestBody: data }),
@@ -100,7 +126,35 @@ function Users() {
     },
   });
 
-  // Mutación para eliminar usuario - CORREGIDO: usa 'userId' como string
+  // Mutación para actualizar perfil propio (usuario actual)
+  const updateMeMutation = useMutation({
+    mutationFn: (data: UserUpdateMe) =>
+      UsersService.updateUserMe({ requestBody: data }),
+    onSuccess: () => {
+      showSuccess("Perfil actualizado exitosamente");
+      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      handleCloseProfileModal();
+    },
+    onError: () => {
+      showError("Error al actualizar el perfil");
+    },
+  });
+
+  // Mutación para cambiar contraseña
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: UpdatePassword) =>
+      UsersService.updatePasswordMe({ requestBody: data }),
+    onSuccess: () => {
+      showSuccess("Contraseña actualizada exitosamente");
+      handleClosePasswordModal();
+    },
+    onError: () => {
+      showError("Error al actualizar la contraseña");
+    },
+  });
+
+  // Mutación para eliminar usuario
   const deleteMutation = useMutation({
     mutationFn: (userId: string) => UsersService.deleteUser({ userId }),
     onSuccess: () => {
@@ -112,12 +166,13 @@ function Users() {
     },
   });
 
+  // Handlers para modal de creación/edición de usuarios (admin)
   const handleOpenModal = (user?: UserPublic) => {
     if (user) {
       setEditingUser(user);
       form.setFieldsValue({
         ...user,
-        password: undefined, // No mostrar contraseña en edición
+        password: undefined,
       });
     } else {
       setEditingUser(null);
@@ -133,7 +188,6 @@ function Users() {
   };
 
   const handleSubmit = async (values: any) => {
-    // Si no hay contraseña en edición, no la enviamos
     if (editingUser && !values.password) {
       delete values.password;
     }
@@ -143,6 +197,35 @@ function Users() {
     } else {
       createMutation.mutate(values);
     }
+  };
+
+  const handleCloseProfileModal = () => {
+    setIsProfileModalOpen(false);
+    profileForm.resetFields();
+  };
+
+  const handleProfileSubmit = async (values: UserUpdateMe) => {
+    updateMeMutation.mutate(values);
+  };
+
+  const handleClosePasswordModal = () => {
+    setIsPasswordModalOpen(false);
+    passwordForm.resetFields();
+  };
+
+  const handlePasswordSubmit = async (values: UpdatePassword) => {
+    changePasswordMutation.mutate(values);
+  };
+
+  // Handlers para modal de vista de detalles
+  const handleViewUser = (user: UserPublic) => {
+    setViewingUser(user);
+    setIsViewModalOpen(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setIsViewModalOpen(false);
+    setViewingUser(null);
   };
 
   const handleDelete = (userId: string) => {
@@ -175,6 +258,25 @@ function Users() {
       dataIndex: "email",
       key: "email",
       ellipsis: true,
+    },
+    {
+      title: "Rol",
+      dataIndex: "role",
+      key: "role",
+      render: (role: UserRole) => {
+        const roleColors: Record<UserRole, string> = {
+          ADMINISTRADOR: "purple",
+          AUXILIAR: "blue",
+          VENDEDOR: "green",
+        };
+        return <Tag color={roleColors[role]}>{role}</Tag>;
+      },
+      filters: [
+        { text: "Administrador", value: "ADMINISTRADOR" },
+        { text: "Auxiliar", value: "AUXILIAR" },
+        { text: "Vendedor", value: "VENDEDOR" },
+      ],
+      onFilter: (value: any, record: UserPublic) => record.role === value,
     },
     {
       title: "Estado",
@@ -210,14 +312,19 @@ function Users() {
     {
       title: "Acciones",
       key: "actions",
-      width: 150,
+      width: 200,
       render: (_: any, record: UserPublic) => {
         const isCurrentUser = currentUser?.id === record.id;
         return (
           <Space>
-            <Tooltip
-              title={isCurrentUser ? "No puedes editarte a ti mismo" : "Editar"}
-            >
+            <Tooltip title="Ver detalles">
+              <Button
+                type="text"
+                icon={<EyeOutlined />}
+                onClick={() => handleViewUser(record)}
+              />
+            </Tooltip>
+            <Tooltip title={isCurrentUser ? "Usa 'Mi Perfil'" : "Editar"}>
               <Button
                 type="text"
                 icon={<EditOutlined />}
@@ -262,7 +369,7 @@ function Users() {
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
         {/* Estadísticas */}
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Card bordered={false}>
               <Statistic
                 title="Total de Usuarios"
@@ -272,7 +379,7 @@ function Users() {
               />
             </Card>
           </Col>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
             <Card bordered={false}>
               <Statistic
                 title="Usuarios Activos"
@@ -328,7 +435,7 @@ function Users() {
         </Card>
       </Space>
 
-      {/* Modal para crear/editar */}
+      {/* Modal para crear/editar usuario (admin) */}
       <Modal
         title={editingUser ? "Editar Usuario" : "Nuevo Usuario"}
         open={isModalOpen}
@@ -355,6 +462,18 @@ function Users() {
 
           <Form.Item name="full_name" label="Nombre Completo">
             <Input placeholder="Nombre completo del usuario" />
+          </Form.Item>
+
+          <Form.Item
+            name="role"
+            label="Rol"
+            rules={[{ required: true, message: "El rol es requerido" }]}
+          >
+            <Select placeholder="Selecciona un rol">
+              <Select.Option value="ADMINISTRADOR">Administrador</Select.Option>
+              <Select.Option value="AUXILIAR">Auxiliar</Select.Option>
+              <Select.Option value="VENDEDOR">Vendedor</Select.Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -412,6 +531,177 @@ function Users() {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Modal para editar perfil propio */}
+      <Modal
+        title="Mi Perfil"
+        open={isProfileModalOpen}
+        onCancel={handleCloseProfileModal}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={profileForm}
+          layout="vertical"
+          onFinish={handleProfileSubmit}
+          autoComplete="off"
+        >
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: "El email es requerido" },
+              { type: "email", message: "Email inválido" },
+            ]}
+          >
+            <Input placeholder="correo@ejemplo.com" />
+          </Form.Item>
+
+          <Form.Item name="full_name" label="Nombre Completo">
+            <Input placeholder="Nombre completo" />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
+            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+              <Button onClick={handleCloseProfileModal}>Cancelar</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={updateMeMutation.isPending}
+              >
+                Actualizar Perfil
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal para cambiar contraseña */}
+      <Modal
+        title="Cambiar Contraseña"
+        open={isPasswordModalOpen}
+        onCancel={handleClosePasswordModal}
+        footer={null}
+        width={500}
+      >
+        <Form
+          form={passwordForm}
+          layout="vertical"
+          onFinish={handlePasswordSubmit}
+          autoComplete="off"
+        >
+          <Form.Item
+            name="current_password"
+            label="Contraseña Actual"
+            rules={[
+              { required: true, message: "La contraseña actual es requerida" },
+              { min: 8, message: "Mínimo 8 caracteres" },
+            ]}
+          >
+            <Input.Password placeholder="Contraseña actual" />
+          </Form.Item>
+
+          <Form.Item
+            name="new_password"
+            label="Nueva Contraseña"
+            rules={[
+              { required: true, message: "La nueva contraseña es requerida" },
+              { min: 8, message: "Mínimo 8 caracteres" },
+            ]}
+          >
+            <Input.Password placeholder="Nueva contraseña" />
+          </Form.Item>
+
+          <Form.Item
+            name="confirm_password"
+            label="Confirmar Nueva Contraseña"
+            dependencies={["new_password"]}
+            rules={[
+              { required: true, message: "Confirma la nueva contraseña" },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue("new_password") === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(
+                    new Error("Las contraseñas no coinciden")
+                  );
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Confirmar nueva contraseña" />
+          </Form.Item>
+
+          <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
+            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+              <Button onClick={handleClosePasswordModal}>Cancelar</Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={changePasswordMutation.isPending}
+              >
+                Cambiar Contraseña
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal para ver detalles de usuario */}
+      <Modal
+        title="Detalles del Usuario"
+        open={isViewModalOpen}
+        onCancel={handleCloseViewModal}
+        footer={[
+          <Button key="close" onClick={handleCloseViewModal}>
+            Cerrar
+          </Button>,
+        ]}
+        width={600}
+      >
+        {loadingDetails ? (
+          <div>Cargando...</div>
+        ) : userDetails ? (
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Email">
+              {userDetails.email}
+            </Descriptions.Item>
+            <Descriptions.Item label="Nombre Completo">
+              {userDetails.full_name || "Sin nombre"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Rol">
+              <Tag
+                color={
+                  userDetails.role === "ADMIN"
+                    ? "purple"
+                    : userDetails.role === "GERENTE"
+                      ? "blue"
+                      : "green"
+                }
+              >
+                {userDetails.role}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Estado">
+              <Tag
+                color={userDetails.is_active ?? true ? "success" : "default"}
+              >
+                {userDetails.is_active ?? true ? "Activo" : "Inactivo"}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Superusuario">
+              {userDetails.is_superuser ?? false ? (
+                <Tag color="gold" icon={<CrownOutlined />}>
+                  Sí
+                </Tag>
+              ) : (
+                <Tag>No</Tag>
+              )}
+            </Descriptions.Item>
+          </Descriptions>
+        ) : null}
       </Modal>
     </>
   );

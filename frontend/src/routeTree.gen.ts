@@ -20,6 +20,7 @@ import { Route as LayoutReportsImport } from './routes/_layout/reports'
 import { Route as LayoutProductsImport } from './routes/_layout/products'
 import { Route as LayoutMovementsImport } from './routes/_layout/movements'
 import { Route as LayoutCategoriesImport } from './routes/_layout/categories'
+import { Route as LayoutAlertsImport } from './routes/_layout/Alerts'
 
 // Create/Update Routes
 
@@ -68,6 +69,11 @@ const LayoutCategoriesRoute = LayoutCategoriesImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutAlertsRoute = LayoutAlertsImport.update({
+  path: '/Alerts',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -79,6 +85,10 @@ declare module '@tanstack/react-router' {
     '/login': {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
+    }
+    '/_layout/Alerts': {
+      preLoaderRoute: typeof LayoutAlertsImport
+      parentRoute: typeof LayoutImport
     }
     '/_layout/categories': {
       preLoaderRoute: typeof LayoutCategoriesImport
@@ -115,6 +125,7 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
+    LayoutAlertsRoute,
     LayoutCategoriesRoute,
     LayoutMovementsRoute,
     LayoutProductsRoute,

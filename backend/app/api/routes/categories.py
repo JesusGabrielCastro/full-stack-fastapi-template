@@ -1,5 +1,5 @@
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
@@ -24,18 +24,23 @@ def read_categories(
     current_user: CurrentUser,
     skip: int = 0,
     limit: int = 100,
-    active_only: bool = True
+    active_only: Optional[bool] = None
 ) -> Any:
     """
     Retrieve categories.
-    All authenticated users can view categories.
+    - Si active_only=True → solo activas
+    - Si active_only=False → solo inactivas
+    - Si active_only=None (no viene) → todas
     """
     count_statement = select(func.count()).select_from(Category)
     statement = select(Category)
 
-    if active_only:
+    if active_only is True:
         count_statement = count_statement.where(Category.is_active == True)
         statement = statement.where(Category.is_active == True)
+    elif active_only is False:
+        count_statement = count_statement.where(Category.is_active == False)
+        statement = statement.where(Category.is_active == False)
 
     count = session.exec(count_statement).one()
     statement = statement.offset(skip).limit(limit).order_by(Category.name)

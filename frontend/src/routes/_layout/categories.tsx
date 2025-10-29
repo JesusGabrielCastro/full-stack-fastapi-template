@@ -12,6 +12,9 @@ import {
   Row,
   Col,
   Statistic,
+  Switch,
+  Tag,
+  Segmented,
 } from "antd";
 import {
   PlusOutlined,
@@ -19,6 +22,8 @@ import {
   DeleteOutlined,
   SearchOutlined,
   AppstoreOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
 } from "@ant-design/icons";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,6 +44,8 @@ const categoriesSearchSchema = z.object({
 
 const PER_PAGE = 10;
 
+type StatusFilter = "all" | "active" | "inactive";
+
 export const Route = createFileRoute("/_layout/categories")({
   component: Categories,
   validateSearch: (search) => categoriesSearchSchema.parse(search),
@@ -55,15 +62,28 @@ function Categories() {
     null
   );
   const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [form] = Form.useForm();
 
-  // Query para categorías
+  // Query para categorías con filtro
   const { data: categoriesData, isLoading } = useQuery({
-    queryKey: ["categories", page],
+    queryKey: ["categories", page, statusFilter],
     queryFn: () =>
       CategoriesService.readCategories({
         skip: (page - 1) * PER_PAGE,
         limit: PER_PAGE,
+        active_only:
+          statusFilter === "all" ? undefined : statusFilter === "active",
+      }),
+  });
+
+  // Query para estadísticas (sin filtro de paginación ni estado)
+  const { data: statsData } = useQuery({
+    queryKey: ["categories-stats"],
+    queryFn: () =>
+      CategoriesService.readCategories({
+        skip: 0,
+        limit: 1000, // Límite alto para obtener todas
       }),
   });
 
@@ -76,12 +96,24 @@ function Categories() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       handleCloseModal();
     },
-    onError: () => {
-      showError("Error al crear la categoría");
+    onError: (error: any) => {
+      console.error("Error al crear categoría:", error);
+      const errorMessage =
+        error?.body?.detail || error?.message || "Error al crear la categoría";
+
+      // Si es un error de validación con múltiples campos
+      if (Array.isArray(errorMessage)) {
+        const errors = errorMessage.map((err: any) => err.msg).join(", ");
+        showError(`Error de validación: ${errors}`);
+      } else if (typeof errorMessage === "string") {
+        showError(errorMessage);
+      } else {
+        showError("Error al crear la categoría");
+      }
     },
   });
 
-  // Mutación para actualizar categoría - CORREGIDO: usa 'id' no 'categoryId'
+  // Mutación para actualizar categoría
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: CategoryUpdate }) =>
       CategoriesService.updateCategory({ id, requestBody: data }),
@@ -90,30 +122,58 @@ function Categories() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       handleCloseModal();
     },
-    onError: () => {
-      showError("Error al actualizar la categoría");
+    onError: (error: any) => {
+      console.error("Error al actualizar categoría:", error);
+      const errorMessage =
+        error?.body?.detail ||
+        error?.message ||
+        "Error al actualizar la categoría";
+
+      // Si es un error de validación con múltiples campos
+      if (Array.isArray(errorMessage)) {
+        const errors = errorMessage.map((err: any) => err.msg).join(", ");
+        showError(`Error de validación: ${errors}`);
+      } else if (typeof errorMessage === "string") {
+        showError(errorMessage);
+      } else {
+        showError("Error al actualizar la categoría");
+      }
     },
   });
 
-  // Mutación para eliminar categoría - CORREGIDO: usa 'id' no 'categoryId'
+  // Mutación para eliminar categoría
   const deleteMutation = useMutation({
     mutationFn: (id: string) => CategoriesService.deleteCategory({ id }),
     onSuccess: () => {
       showSuccess("Categoría eliminada exitosamente");
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
-    onError: () => {
-      showError("Error al eliminar la categoría");
+    onError: (error: any) => {
+      console.error("Error al eliminar categoría:", error);
+      const errorMessage =
+        error?.body?.detail ||
+        error?.message ||
+        "Error al eliminar la categoría";
+
+      if (typeof errorMessage === "string") {
+        showError(errorMessage);
+      } else {
+        showError("Error al eliminar la categoría");
+      }
     },
   });
 
   const handleOpenModal = (category?: CategoryPublic) => {
     if (category) {
       setEditingCategory(category);
-      form.setFieldsValue(category);
+      form.setFieldsValue({
+        ...category,
+        is_active: category.is_active ?? true, // Valor por defecto true si no existe
+      });
     } else {
       setEditingCategory(null);
       form.resetFields();
+      form.setFieldsValue({ is_active: true }); // Valor por defecto para crear
     }
     setIsModalOpen(true);
   };
@@ -136,7 +196,7 @@ function Categories() {
     deleteMutation.mutate(id);
   };
 
-  // Filtrar categorías localmente
+  // Filtrar categorías solo por búsqueda (el estado se filtra en el backend)
   const filteredData = categoriesData?.data.filter(
     (cat) =>
       cat.name.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -158,6 +218,17 @@ function Categories() {
       ellipsis: true,
       render: (desc: string | null) =>
         desc || <span style={{ color: "#999" }}>Sin descripción</span>,
+    },
+    {
+      title: "Estado",
+      dataIndex: "is_active",
+      key: "is_active",
+      width: 120,
+      render: (isActive: boolean = true) => (
+        <Tag color={isActive ? "success" : "default"}>
+          {isActive ? "Activa" : "Inactiva"}
+        </Tag>
+      ),
     },
     {
       title: "Acciones",
@@ -188,7 +259,29 @@ function Categories() {
     },
   ];
 
-  const totalCategories = categoriesData?.count || 0;
+  const totalCategories = statsData?.count || 0;
+  const activeCategories =
+    statsData?.data.filter((cat) => cat.is_active ?? true).length || 0;
+  const inactiveCategories = totalCategories - activeCategories;
+
+  // Opciones del filtro de estado
+  const statusOptions = [
+    {
+      label: "Todas",
+      value: "all",
+      icon: <AppstoreOutlined />,
+    },
+    {
+      label: "Activas",
+      value: "active",
+      icon: <CheckCircleOutlined />,
+    },
+    {
+      label: "Inactivas",
+      value: "inactive",
+      icon: <CloseCircleOutlined />,
+    },
+  ];
 
   return (
     <>
@@ -196,7 +289,7 @@ function Categories() {
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
         {/* Estadísticas */}
         <Row gutter={16}>
-          <Col span={24}>
+          <Col xs={24} sm={8}>
             <Card bordered={false}>
               <Statistic
                 title="Total de Categorías"
@@ -206,32 +299,73 @@ function Categories() {
               />
             </Card>
           </Col>
+          <Col xs={24} sm={8}>
+            <Card bordered={false}>
+              <Statistic
+                title="Categorías Activas"
+                value={activeCategories}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: "#10b981" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Card bordered={false}>
+              <Statistic
+                title="Categorías Inactivas"
+                value={inactiveCategories}
+                prefix={<CloseCircleOutlined />}
+                valueStyle={{ color: "#ef4444" }}
+              />
+            </Card>
+          </Col>
         </Row>
 
         {/* Tabla */}
         <Card
           title="Gestión de Categorías"
           extra={
-            <Space>
-              <Search
-                placeholder="Buscar categorías..."
-                allowClear
-                onChange={(e) => setSearchText(e.target.value)}
-                style={{ width: 250 }}
-                prefix={<SearchOutlined />}
-              />
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => handleOpenModal()}
-              >
-                Nueva Categoría
-              </Button>
-            </Space>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => handleOpenModal()}
+            >
+              Nueva Categoría
+            </Button>
           }
           bordered={false}
           style={{ borderRadius: 12 }}
         >
+          {/* Filtros superiores */}
+          <Space
+            direction="vertical"
+            size="middle"
+            style={{ width: "100%", marginBottom: 16 }}
+          >
+            <Row gutter={16} align="middle">
+              <Col xs={24} md={12} lg={8}>
+                <Search
+                  placeholder="Buscar categorías..."
+                  allowClear
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  prefix={<SearchOutlined />}
+                  style={{ width: "100%" }}
+                />
+              </Col>
+              <Col xs={24} md={12} lg={16}>
+                <Space>
+                  <span style={{ color: "#666" }}>Filtrar por estado:</span>
+                  <Segmented
+                    options={statusOptions}
+                    value={statusFilter}
+                    onChange={(value) => setStatusFilter(value as StatusFilter)}
+                  />
+                </Space>
+              </Col>
+            </Row>
+          </Space>
+
           <Table
             columns={columns}
             dataSource={filteredData || []}
@@ -240,7 +374,7 @@ function Categories() {
             pagination={{
               current: page,
               pageSize: PER_PAGE,
-              total: totalCategories,
+              total: categoriesData?.count || 0,
               onChange: (newPage) =>
                 navigate({
                   search: (prev: any) => ({ ...prev, page: newPage }),
@@ -287,6 +421,19 @@ function Categories() {
               placeholder="Descripción de la categoría"
               showCount
               maxLength={500}
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="is_active"
+            label="Estado"
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Switch
+              checkedChildren="Activa"
+              unCheckedChildren="Inactiva"
+              defaultChecked
             />
           </Form.Item>
 

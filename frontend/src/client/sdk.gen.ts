@@ -72,14 +72,21 @@ import type {
   MovementsCreateMovementResponse,
   MovementsReadMovementData,
   MovementsReadMovementResponse,
-  MovementsUpdateMovementData,
-  MovementsUpdateMovementResponse,
-  MovementsDeleteMovementData,
-  MovementsDeleteMovementResponse,
   ReportsGetSalesReportData,
   ReportsGetSalesReportResponse,
   ReportsGetPurchasesReportData,
   ReportsGetPurchasesReportResponse,
+  AlertsReadAlertsData,
+  AlertsReadAlertsResponse,
+  AlertsReadActiveAlertsResponse,
+  AlertsReadAlertData,
+  AlertsReadAlertResponse,
+  AlertsResolveAlertData,
+  AlertsResolveAlertResponse,
+  AlertsReadAlertsByProductData,
+  AlertsReadAlertsByProductResponse,
+  KardexGetProductKardexData,
+  KardexGetProductKardexResponse,
 } from "./types.gen";
 
 export class ItemsService {
@@ -726,6 +733,7 @@ export class CategoriesService {
       query: {
         skip: data.skip,
         limit: data.limit,
+        active_only: data.active_only,
       },
       errors: {
         422: "Validation Error",
@@ -831,10 +839,14 @@ export class CategoriesService {
 export class MovementsService {
   /**
    * Read Movements
-   * Retrieve movements.
+   * Retrieve inventory movements. All authenticated users can view movements. Filters: product_id, movement_type, date range
    * @param data The data for the request.
    * @param data.skip
    * @param data.limit
+   * @param data.productId
+   * @param data.movementType
+   * @param data.startDate
+   * @param data.endDate
    * @returns MovementsPublic Successful Response
    * @throws ApiError
    */
@@ -843,10 +855,14 @@ export class MovementsService {
   ): CancelablePromise<MovementsReadMovementsResponse> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/movements/",
+      url: "/api/v1/inventory-movements/",
       query: {
         skip: data.skip,
         limit: data.limit,
+        product_id: data.product_id,
+        movement_type: data.movement_type,
+        start_date: data.start_date,
+        end_date: data.end_date,
       },
       errors: {
         422: "Validation Error",
@@ -867,7 +883,7 @@ export class MovementsService {
   ): CancelablePromise<MovementsCreateMovementResponse> {
     return __request(OpenAPI, {
       method: "POST",
-      url: "/api/v1/movements/",
+      url: "/api/v1/inventory-movements/",
       body: data.requestBody,
       mediaType: "application/json",
       errors: {
@@ -889,56 +905,7 @@ export class MovementsService {
   ): CancelablePromise<MovementsReadMovementResponse> {
     return __request(OpenAPI, {
       method: "GET",
-      url: "/api/v1/movements/{id}",
-      path: {
-        id: data.id,
-      },
-      errors: {
-        422: "Validation Error",
-      },
-    });
-  }
-
-  /**
-   * Update Movement
-   * Update a movement.
-   * @param data The data for the request.
-   * @param data.id
-   * @param data.requestBody
-   * @returns MovementPublic Successful Response
-   * @throws ApiError
-   */
-  public static updateMovement(
-    data: MovementsUpdateMovementData
-  ): CancelablePromise<MovementsUpdateMovementResponse> {
-    return __request(OpenAPI, {
-      method: "PATCH",
-      url: "/api/v1/movements/{id}",
-      path: {
-        id: data.id,
-      },
-      body: data.requestBody,
-      mediaType: "application/json",
-      errors: {
-        422: "Validation Error",
-      },
-    });
-  }
-
-  /**
-   * Delete Movement
-   * Delete a movement.
-   * @param data The data for the request.
-   * @param data.id
-   * @returns Message Successful Response
-   * @throws ApiError
-   */
-  public static deleteMovement(
-    data: MovementsDeleteMovementData
-  ): CancelablePromise<MovementsDeleteMovementResponse> {
-    return __request(OpenAPI, {
-      method: "DELETE",
-      url: "/api/v1/movements/{id}",
+      url: "/api/v1/inventory-movements/{id}",
       path: {
         id: data.id,
       },
@@ -966,8 +933,8 @@ export class ReportsService {
       method: "GET",
       url: "/api/v1/reports/sales",
       query: {
-        start_date: data.startDate,
-        end_date: data.endDate,
+        start_date: data.start_date,
+        end_date: data.end_date,
       },
       errors: {
         422: "Validation Error",
@@ -991,8 +958,174 @@ export class ReportsService {
       method: "GET",
       url: "/api/v1/reports/purchases",
       query: {
-        start_date: data.startDate,
-        end_date: data.endDate,
+        start_date: data.start_date,
+        end_date: data.end_date,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    });
+  }
+}
+
+export class AlertsService {
+  /**
+   * Read Alerts
+   * Retrieve alerts. All authenticated users can view alerts. Filters: resolved (True/False/None for all), product_id, alert_type
+   * @param data The data for the request.
+   * @param data.skip
+   * @param data.limit
+   * @param data.resolved
+   * @param data.product_id
+   * @param data.alert_type
+   * @returns AlertsPublic Successful Response
+   * @throws ApiError
+   */
+  public static readAlerts(
+    data: AlertsReadAlertsData = {}
+  ): CancelablePromise<AlertsReadAlertsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/alerts/",
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+        resolved: data.resolved,
+        product_id: data.product_id,
+        alert_type: data.alert_type,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    });
+  }
+
+  /**
+   * Read Active Alerts
+   * Retrieve only active (unresolved) alerts. Useful for dashboard/monitoring.
+   * @returns AlertsPublic Successful Response
+   * @throws ApiError
+   */
+  public static readActiveAlerts(): CancelablePromise<AlertsReadActiveAlertsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/alerts/active",
+      errors: {
+        422: "Validation Error",
+      },
+    });
+  }
+
+  /**
+   * Read Alert
+   * Get alert by ID. All authenticated users can view alerts.
+   * @param data The data for the request.
+   * @param data.id
+   * @returns AlertPublic Successful Response
+   * @throws ApiError
+   */
+  public static readAlert(
+    data: AlertsReadAlertData
+  ): CancelablePromise<AlertsReadAlertResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/alerts/{id}",
+      path: {
+        id: data.id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    });
+  }
+
+  /**
+   * Resolve Alert
+   * Resolve an alert manually. Only administrador can resolve alerts. Note: Alerts are also auto-resolved when stock is replenished.
+   * @param data The data for the request.
+   * @param data.id
+   * @param data.requestBody
+   * @returns AlertPublic Successful Response
+   * @throws ApiError
+   */
+  public static resolveAlert(
+    data: AlertsResolveAlertData
+  ): CancelablePromise<AlertsResolveAlertResponse> {
+    return __request(OpenAPI, {
+      method: "PATCH",
+      url: "/api/v1/alerts/{id}/resolve",
+      path: {
+        id: data.id,
+      },
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    });
+  }
+
+  /**
+   * Read Alerts By Product
+   * Get all alerts for a specific product. Filter by resolved status (optional).
+   * @param data The data for the request.
+   * @param data.productId
+   * @param data.resolved
+   * @returns AlertsPublic Successful Response
+   * @throws ApiError
+   */
+  public static readAlertsByProduct(
+    data: AlertsReadAlertsByProductData
+  ): CancelablePromise<AlertsReadAlertsByProductResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/alerts/product/{product_id}",
+      path: {
+        product_id: data.productId,
+      },
+      query: {
+        resolved: data.resolved,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    });
+  }
+}
+
+export class KardexService {
+  /**
+   * Get Product Kardex
+   * Get Kardex (movement history) for a product. All authenticated users can view kardex.
+   * Returns:
+   * - Product information
+   * - List of movements (filtered by date if provided)
+   * - Total number of movements
+   * - Current stock
+   * - Stock status
+   * @param data The data for the request.
+   * @param data.productId
+   * @param data.start_date
+   * @param data.end_date
+   * @param data.skip
+   * @param data.limit
+   * @returns ProductKardex Successful Response
+   * @throws ApiError
+   */
+  public static getProductKardex(
+    data: KardexGetProductKardexData
+  ): CancelablePromise<KardexGetProductKardexResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/kardex/{product_id}",
+      path: {
+        product_id: data.productId,
+      },
+      query: {
+        start_date: data.start_date,
+        end_date: data.end_date,
+        skip: data.skip,
+        limit: data.limit,
       },
       errors: {
         422: "Validation Error",

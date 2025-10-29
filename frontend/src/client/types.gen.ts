@@ -61,11 +61,14 @@ export type UpdatePassword = {
   new_password: string;
 };
 
+export type UserRole = "ADMINISTRADOR" | "AUXILIAR" | "VENDEDOR";
+
 export type UserCreate = {
   email: string;
   is_active?: boolean;
   is_superuser?: boolean;
   full_name?: string | null;
+  role: UserRole;
   password: string;
 };
 
@@ -74,6 +77,7 @@ export type UserPublic = {
   is_active?: boolean;
   is_superuser?: boolean;
   full_name?: string | null;
+  role: UserRole;
   id: string;
 };
 
@@ -93,6 +97,7 @@ export type UserUpdate = {
   is_active?: boolean;
   is_superuser?: boolean;
   full_name?: string | null;
+  role?: UserRole | null;
   password?: string | null;
 };
 
@@ -112,20 +117,32 @@ export type ValidationError = {
 // ============================================
 
 export type ProductCreate = {
+  sku: string;
   name: string;
   description?: string | null;
-  price: number;
-  stock: number;
   category_id?: string | null;
+  unit_price: number;
+  sale_price?: number | null;
+  unit_of_measure: string;
+  min_stock: number;
+  is_active?: boolean;
 };
 
 export type ProductPublic = {
+  sku: string;
   name: string;
   description?: string | null;
-  price: number;
-  stock: number;
   category_id?: string | null;
+  unit_price: string;
+  sale_price?: string | null;
+  unit_of_measure: string;
+  min_stock: number;
+  is_active: boolean;
   id: string;
+  current_stock: number;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 };
 
 export type ProductsPublic = {
@@ -134,21 +151,27 @@ export type ProductsPublic = {
 };
 
 export type ProductUpdate = {
+  sku?: string | null;
   name?: string | null;
   description?: string | null;
-  price?: number | null;
-  stock?: number | null;
   category_id?: string | null;
+  unit_price?: number | null;
+  sale_price?: number | null;
+  unit_of_measure?: string | null;
+  min_stock?: number | null;
+  is_active?: boolean | null;
 };
 
 export type CategoryCreate = {
   name: string;
   description?: string | null;
+  is_active?: boolean | null;
 };
 
 export type CategoryPublic = {
   name: string;
   description?: string | null;
+  is_active?: boolean | null;
   id: string;
 };
 
@@ -160,24 +183,41 @@ export type CategoriesPublic = {
 export type CategoryUpdate = {
   name?: string | null;
   description?: string | null;
+  is_active?: boolean | null;
 };
 
-export type MovementType = "entrada" | "salida";
+export type MovementType =
+  | "ENTRADA_COMPRA"
+  | "SALIDA_VENTA"
+  | "AJUSTE_CONTEO"
+  | "AJUSTE_MERMA"
+  | "DEVOLUCION_CLIENTE"
+  | "DEVOLUCION_PROVEEDOR";
 
 export type MovementCreate = {
   product_id: string;
   quantity: number;
   movement_type: MovementType;
+  reference_number?: string | null;
   notes?: string | null;
+  unit_price?: number | null;
+  movement_date?: string | null;
 };
 
 export type MovementPublic = {
   product_id: string;
   quantity: number;
   movement_type: MovementType;
+  reference_number?: string | null;
   notes?: string | null;
+  unit_price?: string | null;
+  movement_date: string;
   id: string;
+  total_amount?: string | null;
+  stock_before: number;
+  stock_after: number;
   created_at: string;
+  created_by: string;
 };
 
 export type MovementsPublic = {
@@ -191,18 +231,99 @@ export type MovementUpdate = {
   notes?: string | null;
 };
 
+// ============================================
+// REPORTS TYPES
+// ============================================
+
+export type AlertType = "LOW_STOCK" | "OUT_OF_STOCK";
+
+export type AlertPublic = {
+  product_id: string;
+  alert_type: AlertType;
+  current_stock: number;
+  min_stock: number;
+  notes?: string | null;
+  id: string;
+  is_resolved: boolean;
+  resolved_at?: string | null;
+  resolved_by?: string | null;
+  created_at: string;
+};
+
+export type AlertsPublic = {
+  data: Array<AlertPublic>;
+  count: number;
+};
+
+export type AlertResolve = {
+  is_resolved: boolean;
+  notes?: string | null;
+};
+
+export type ProductKardex = {
+  product: ProductPublic;
+  movements: Array<MovementPublic>;
+  total_movements: number;
+  current_stock: number;
+  stock_status: string;
+};
+
+export type InventoryReportItem = {
+  sku: string;
+  name: string;
+  category_name?: string | null;
+  current_stock: number;
+  min_stock: number;
+  unit_price: string;
+  sale_price?: string | null;
+  total_value: string;
+  stock_status: string;
+  unit_of_measure: string;
+};
+
+export type InventoryReport = {
+  generated_at: string;
+  total_products: number;
+  total_value: string;
+  low_stock_count: number;
+  out_of_stock_count: number;
+  items: Array<InventoryReportItem>;
+};
+
+export type SalesReportItem = {
+  product_sku: string;
+  product_name: string;
+  quantity_sold: number;
+  total_sales: string;
+  movement_count: number;
+};
+
 export type SalesReport = {
+  generated_at: string;
   start_date?: string | null;
   end_date?: string | null;
-  total_sales: number;
-  total_quantity: number;
+  total_sales: string;
+  total_items_sold: number;
+  total_transactions: number;
+  items: Array<SalesReportItem>;
+};
+
+export type PurchasesReportItem = {
+  product_sku: string;
+  product_name: string;
+  quantity_purchased: number;
+  total_cost: string;
+  movement_count: number;
 };
 
 export type PurchasesReport = {
+  generated_at: string;
   start_date?: string | null;
   end_date?: string | null;
-  total_purchases: number;
-  total_quantity: number;
+  total_purchases: string;
+  total_items_purchased: number;
+  total_transactions: number;
+  items: Array<PurchasesReportItem>;
 };
 
 // ============================================
@@ -344,6 +465,10 @@ export type UtilsHealthCheckResponse = boolean;
 export type ProductsReadProductsData = {
   limit?: number;
   skip?: number;
+  active_only?: boolean;
+  category_id?: string | null;
+  search?: string | null;
+  low_stock_only?: boolean;
 };
 
 export type ProductsReadProductsResponse = ProductsPublic;
@@ -377,6 +502,7 @@ export type ProductsDeleteProductResponse = Message;
 export type CategoriesReadCategoriesData = {
   limit?: number;
   skip?: number;
+  active_only?: boolean;
 };
 
 export type CategoriesReadCategoriesResponse = CategoriesPublic;
@@ -410,6 +536,10 @@ export type CategoriesDeleteCategoryResponse = Message;
 export type MovementsReadMovementsData = {
   limit?: number;
   skip?: number;
+  product_id?: string | null;
+  movement_type?: MovementType | null;
+  start_date?: string | null;
+  end_date?: string | null;
 };
 
 export type MovementsReadMovementsResponse = MovementsPublic;
@@ -440,16 +570,92 @@ export type MovementsDeleteMovementData = {
 export type MovementsDeleteMovementResponse = Message;
 
 // Reports
+export type ReportsGetInventoryReportData = {
+  category_id?: string | null;
+  active_only?: boolean;
+};
+
+export type ReportsGetInventoryReportResponse = InventoryReport;
+
+export type ReportsExportInventoryCsvData = {
+  category_id?: string | null;
+  active_only?: boolean;
+};
+
+export type ReportsExportInventoryCsvResponse = string;
+
 export type ReportsGetSalesReportData = {
-  startDate?: string | null;
-  endDate?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  category_id?: string | null;
 };
 
 export type ReportsGetSalesReportResponse = SalesReport;
 
+export type ReportsExportSalesCsvData = {
+  start_date?: string | null;
+  end_date?: string | null;
+  category_id?: string | null;
+};
+
+export type ReportsExportSalesCsvResponse = string;
+
 export type ReportsGetPurchasesReportData = {
-  startDate?: string | null;
-  endDate?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  category_id?: string | null;
 };
 
 export type ReportsGetPurchasesReportResponse = PurchasesReport;
+
+export type ReportsExportPurchasesCsvData = {
+  start_date?: string | null;
+  end_date?: string | null;
+  category_id?: string | null;
+};
+
+export type ReportsExportPurchasesCsvResponse = string;
+
+// Alerts
+export type AlertsReadAlertsData = {
+  limit?: number;
+  skip?: number;
+  resolved?: boolean | null;
+  product_id?: string | null;
+  alert_type?: AlertType | null;
+};
+
+export type AlertsReadAlertsResponse = AlertsPublic;
+
+export type AlertsReadActiveAlertsResponse = AlertsPublic;
+
+export type AlertsReadAlertData = {
+  id: string;
+};
+
+export type AlertsReadAlertResponse = AlertPublic;
+
+export type AlertsResolveAlertData = {
+  id: string;
+  requestBody: AlertResolve;
+};
+
+export type AlertsResolveAlertResponse = AlertPublic;
+
+export type AlertsReadAlertsByProductData = {
+  productId: string;
+  resolved?: boolean | null;
+};
+
+export type AlertsReadAlertsByProductResponse = AlertsPublic;
+
+// Kardex
+export type KardexGetProductKardexData = {
+  productId: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  skip?: number;
+  limit?: number;
+};
+
+export type KardexGetProductKardexResponse = ProductKardex;
